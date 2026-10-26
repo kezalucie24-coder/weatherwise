@@ -1,0 +1,457 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>WeatherWise</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@800&family=DM+Sans:wght@300;400;500;700&display=swap" rel="stylesheet">
+<style>
+body{--page:#6a8a8a;--bg1:#0c1f24;--bg2:#25454a;--s1:#0c1f24;--s2:#25454a;--s3:#6c8a85;--c1:#070f12;--c2:#2a4a50;--c3:#7f9d9a;--f1:#56733f;--f2:#1f3d12;--glow:rgba(255,214,140,.45);--shade:.1}
+body[data-mood=rain]{--page:#6f8d93;--bg1:#1c2f36;--bg2:#3f5c63;--s1:#1c2f36;--s2:#3f5c63;--s3:#8aa2a2;--c1:#17262c;--c2:#3a565c;--c3:#8aa6a8;--f1:#5b7a44;--f2:#25481a;--glow:rgba(255,240,200,.18);--shade:.15}
+body[data-mood=cloud]{--page:#8ea6b4;--bg1:#3f5e75;--bg2:#5b7b92;--s1:#4a6a82;--s2:#86a4b6;--s3:#c3d3d8;--c1:#60808f;--c2:#9ab3c0;--c3:#e3edf0;--f1:#76a04f;--f2:#2f6a1f;--glow:rgba(255,255,255,.35);--shade:.3}
+body[data-mood=clear]{--page:#8cc3ea;--bg1:#1e5fa8;--bg2:#2f80c9;--s1:#1e73c9;--s2:#5aa9e6;--s3:#cfe8f7;--c1:rgba(255,255,255,.8);--c2:rgba(255,255,255,.45);--c3:#fff;--f1:#7cbc50;--f2:#2f8a22;--glow:rgba(255,236,170,.75);--shade:.38}
+:root{--glass:rgba(255,255,255,.16);--line:rgba(255,255,255,.3)}
+*{box-sizing:border-box;margin:0}
+body{min-height:100vh;display:grid;place-items:center;padding:20px;font:400 16px/1.5 'DM Sans',system-ui,sans-serif;color:#fff;background:var(--page);transition:background .6s}
+body::before{content:'';position:fixed;inset:-10%;z-index:-1;filter:blur(24px);background:radial-gradient(35% 30% at 10% 95%,rgba(255,255,255,.16),transparent),radial-gradient(40% 30% at 90% 100%,rgba(30,50,55,.3),transparent),radial-gradient(40% 25% at 50% 0%,rgba(30,50,55,.25),transparent)}
+button{font:inherit;color:inherit;cursor:pointer;border:0;background:none}
+button:focus-visible,input:focus-visible{outline:2px solid #fff;outline-offset:2px}
+.gl{background:linear-gradient(135deg,rgba(255,255,255,.22),rgba(255,255,255,.08));border:1px solid rgba(255,255,255,.2);backdrop-filter:blur(20px) saturate(1.3);-webkit-backdrop-filter:blur(20px) saturate(1.3)}
+.app{position:relative;isolation:isolate;overflow:hidden;width:min(1100px,100%);height:min(680px,calc(100vh - 40px));min-height:600px;border-radius:30px;display:grid;grid-template-columns:56px 1fr 252px;grid-template-rows:auto 1fr;grid-template-areas:"nav head head" "nav main side";gap:0 30px;padding:12px 26px 12px 12px;box-shadow:0 30px 80px rgba(10,25,30,.35)}
+.scene{position:absolute;inset:0;z-index:-1;background:linear-gradient(180deg,var(--s1),var(--s2) 48%,var(--s3) 66%)}
+.scene::after{content:'';position:absolute;inset:0;background:linear-gradient(90deg,rgba(0,0,0,var(--shade)),transparent 70%)}
+.cl{position:absolute;border-radius:50%;filter:blur(34px);background:radial-gradient(closest-side,var(--cc),transparent);animation:dr 50s ease-in-out infinite alternate}
+@keyframes dr{to{transform:translateX(5%) scale(1.06)}}
+.glow{position:absolute;right:2%;top:38%;width:40%;height:40%;background:radial-gradient(closest-side,var(--glow),transparent)}
+.field{position:absolute;left:0;right:0;bottom:0;height:36%;background:linear-gradient(180deg,var(--s3),var(--f1) 16%,var(--f2))}
+.field::after{content:'';position:absolute;inset:0;background:repeating-linear-gradient(82deg,rgba(0,0,0,.14) 0 3px,transparent 3px 38px);transform:perspective(260px) rotateX(38deg);transform-origin:top;opacity:.7}
+#rain{position:absolute;inset:0;width:100%;height:100%}
+.bolt{position:absolute;top:20%;left:48%;width:90px;height:46%;opacity:0;filter:drop-shadow(0 0 8px #bfe6ff)}
+.bolt.on{animation:fl .7s}
+@keyframes fl{0%{opacity:0}10%{opacity:1}20%{opacity:.15}35%{opacity:.9}100%{opacity:0}}
+.nav{grid-area:nav;display:flex;flex-direction:column;align-items:center;padding:16px 0;border-radius:28px}
+.nav .mid{margin:auto 0;display:flex;flex-direction:column;gap:14px}
+.nav button{position:relative;width:40px;height:40px;display:grid;place-items:center;border-radius:12px;opacity:.7}
+.nav button:hover,.nav button[aria-current=true]{opacity:1}
+.nav button[aria-current=true]::before{content:'';position:absolute;left:-12px;top:9px;bottom:9px;width:4px;border-radius:0 4px 4px 0;background:#fff}
+.head{grid-area:head;display:flex;justify-content:space-between;align-items:center;padding-top:10px}
+.head small{display:block;font-size:13px;opacity:.8}
+.head b{font-weight:500;font-size:16px}
+.act{display:flex;gap:12px}
+.circ{position:relative;width:42px;height:42px;border-radius:50%;display:grid;place-items:center;background:rgba(255,255,255,.16);border:1px solid rgba(255,255,255,.18);backdrop-filter:blur(14px);font-weight:700}
+.circ.dot::after{content:'';position:absolute;top:9px;right:10px;width:8px;height:8px;border-radius:50%;background:#fb7185}
+main{grid-area:main;display:flex;flex-direction:column;justify-content:space-between;min-width:0;padding:14px 0 6px}
+.pill{display:inline-block;font-size:13px;padding:5px 14px;border-radius:999px;background:rgba(255,255,255,.16);border:1px solid rgba(255,255,255,.18);margin-bottom:14px}
+h1{font:400 clamp(36px,5vw,54px)/1.05 'DM Sans',sans-serif;letter-spacing:-.02em;text-shadow:0 2px 20px rgba(0,0,0,.25)}
+#desc{max-width:380px;margin-top:16px;font-size:13px;line-height:1.6;opacity:.9;text-shadow:0 1px 10px rgba(0,0,0,.3)}
+#err{display:none;margin-bottom:10px;padding:10px 14px;border-radius:14px;background:rgba(251,113,133,.35);font-size:14px}
+.fore{display:grid;grid-template-columns:repeat(var(--n,6),1fr);text-shadow:0 1px 10px rgba(0,0,0,.3)}
+.tp,.dy{text-align:center;opacity:.85;border-radius:10px;padding:2px}
+.tp{display:flex;justify-content:center;align-items:center;gap:6px;font-size:26px;font-weight:300}
+.dy{font-size:15px;opacity:.75}
+.tp[aria-pressed=true]{font-weight:700;opacity:1;font-size:28px}
+.dy[aria-pressed=true]{font-weight:700;opacity:1}
+.wave{grid-column:1/-1;position:relative;height:90px;margin:8px 0}
+.wave svg{width:100%;height:90px;display:block;overflow:visible}
+.wave path{fill:none;stroke:rgba(255,255,255,.75);stroke-width:2.2;filter:drop-shadow(0 0 6px rgba(255,255,255,.5))}
+.pt{position:absolute;width:12px;height:12px;border-radius:50%;background:#fff;transform:translate(-50%,-50%);box-shadow:0 0 18px 8px rgba(255,255,255,.65);transition:left .35s,top .35s}
+.pt::before{content:'';position:absolute;left:5.5px;top:-34px;width:1px;height:80px;background:linear-gradient(transparent,#fff,transparent)}
+.side{grid-area:side;display:flex;flex-direction:column;gap:16px;padding-top:6px;min-width:0}
+.big{padding:18px 20px;border-radius:24px}
+.loc{display:flex;flex-wrap:wrap;align-items:center;gap:8px;font-size:17px;font-weight:500}
+.loc .star{margin:0;padding:3px 10px;font-size:12px}
+.deg{font-size:76px;font-weight:300;line-height:1.05;letter-spacing:-.04em;margin:4px 0 8px}
+.deg span{font-weight:300}
+#stats{display:flex;justify-content:space-between;font-size:13px}
+#stats span{display:inline-flex;align-items:center;gap:6px}
+#cards{display:flex;flex-direction:column;gap:16px}
+.mc{display:flex;justify-content:space-between;align-items:center;text-align:left;padding:14px 18px;border-radius:22px;height:90px;width:100%}
+.mc small{display:block;font-size:12px;opacity:.7}
+.mc b{display:block;font-size:16px;font-weight:700}
+.mc span{font-size:12px;opacity:.75}
+.mt{display:flex;align-items:center;gap:6px;font-size:32px;font-weight:300}
+.sheet{position:absolute;z-index:5;top:76px;left:92px;right:22px;bottom:22px;padding:24px 26px;overflow:auto;border-radius:26px;background:rgba(8,18,22,.62);backdrop-filter:blur(22px);-webkit-backdrop-filter:blur(22px);border:1px solid rgba(255,255,255,.2)}
+.sheet[hidden]{display:none}
+.sheet h2{font:500 24px 'DM Sans',sans-serif;margin-bottom:14px}
+.sheet h3{font:500 17px 'DM Sans',sans-serif;margin:16px 0 8px}
+.sheet p{opacity:.85}
+.x{position:absolute;top:14px;right:16px;width:34px;height:34px;border-radius:50%;background:rgba(255,255,255,.14);font-size:20px}
+.pane{display:none}.pane.on{display:block}
+.sheet ul{list-style:none;padding:0;display:grid;gap:8px}
+.sheet li{padding:11px 14px;border-radius:14px;background:rgba(255,255,255,.1);border-left:5px solid #7dd3fc;font-size:15px}
+.sheet li.warning{border-color:#fcd34d}.sheet li.danger{border-color:#fb7185;background:rgba(251,113,133,.2)}.sheet li.none{border-color:transparent;opacity:.75}
+.sheet li b{font-size:12px;margin-right:6px;padding:2px 8px;border-radius:999px;background:rgba(255,255,255,.2)}
+.seg{display:inline-flex;flex-wrap:wrap;background:rgba(255,255,255,.12);border:1px solid var(--line);border-radius:999px;padding:3px;margin-bottom:6px}
+.seg button{font-size:14px;padding:7px 14px;border-radius:999px}
+.seg button[aria-pressed=true]{background:#fff;color:#14303a;font-weight:700}
+.pane label{display:block;margin:14px 0 6px;font-size:14px;opacity:.85}
+.ctl{display:flex;gap:10px;flex-wrap:wrap;margin-top:18px}
+#q{width:100%;padding:11px 16px;border-radius:999px;border:1px solid var(--line);background:rgba(255,255,255,.12);color:#fff;font:inherit;margin-bottom:10px}
+#q::placeholder{color:rgba(255,255,255,.65)}
+#chips{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px}
+.chip{padding:11px 14px;border-radius:14px;background:rgba(255,255,255,.1);text-align:left}
+.chip[aria-pressed=true]{background:#fff;color:#14303a;font-weight:700}
+.hist{display:flex;gap:12px;align-items:flex-end;height:130px;margin-top:14px}
+.hist div{flex:1;text-align:center;font-size:12px}
+.hist i{display:block;background:rgba(255,255,255,.8);border-radius:8px 8px 3px 3px;margin-bottom:4px}
+.busy{opacity:.6;transition:opacity .2s}
+/* ---------- Create account (inside the sheet) ---------- */
+#rf{max-width:420px}
+#rf input{width:100%;padding:11px 16px;border-radius:999px;border:1px solid var(--line);background:rgba(255,255,255,.12);color:#fff;font:inherit}
+#rf input::placeholder{color:rgba(255,255,255,.65)}
+.pw{position:relative}
+.pw button{position:absolute;right:6px;top:50%;transform:translateY(-50%);font-size:13px;padding:5px 12px;border-radius:999px;background:rgba(255,255,255,.16)}
+.go{width:100%;margin-top:22px;padding:12px;border-radius:999px;background:#fff;color:#14303a;font-weight:700}
+.go:disabled{opacity:.6;cursor:wait}
+#rmsg{display:none;margin-top:14px;padding:10px 14px;border-radius:14px;background:rgba(251,113,133,.35);font-size:14px}
+#rmsg.ok{background:rgba(125,211,252,.3)}
+.rfoot{margin-top:16px;font-size:14px;opacity:.85}
+.rfoot button{font-weight:700;text-decoration:underline}
+@media(max-width:920px){
+  body{padding:0;display:block}
+  .app{width:100%;height:auto;min-height:100vh;border-radius:0;grid-template-columns:1fr;grid-template-rows:auto;grid-template-areas:"nav" "head" "main" "side";gap:18px;padding:14px}
+  .nav{flex-direction:row;padding:8px 14px;border-radius:22px}.nav .mid{flex-direction:row;margin:0 auto}
+  .nav button[aria-current=true]::before{left:9px;right:9px;top:auto;bottom:-6px;width:auto;height:3px;border-radius:3px 3px 0 0}
+  main{gap:26px}.tp{font-size:17px}.tp[aria-pressed=true]{font-size:18px}.tp svg{display:none}.dy{font-size:11px}
+  .sheet{position:fixed;top:12px;left:12px;right:12px;bottom:12px}
+}
+@media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body data-mood="storm">
+<div class="app" id="app">
+  <div class="scene" aria-hidden="true">
+    <i class="cl" style="--cc:var(--c1);left:8%;top:-28%;width:84%;height:80%"></i>
+    <i class="cl" style="--cc:var(--c2);left:-18%;top:4%;width:56%;height:60%;animation-duration:65s"></i>
+    <i class="cl" style="--cc:var(--c3);right:-18%;top:-4%;width:50%;height:56%;animation-duration:58s"></i>
+    <i class="cl" style="--cc:var(--c2);left:30%;top:28%;width:40%;height:30%;animation-duration:45s"></i>
+    <div class="glow"></div><div class="field"></div><canvas id="rain"></canvas>
+    <svg id="bolt" class="bolt" viewBox="0 0 100 200" preserveAspectRatio="none"><polyline points="52,0 40,60 58,62 30,130 48,132 20,200" fill="none" stroke="#e8f6ff" stroke-width="3" stroke-linejoin="round"/></svg>
+  </div>
+
+  <nav class="nav gl" aria-label="Main">
+    <span data-ic="logo" data-s="30"></span>
+    <div class="mid">
+      <button data-view="home" data-ic="grid" aria-current="true"></button>
+      <button data-view="advice" data-ic="chart"></button>
+      <button data-view="places" data-ic="globe"></button>
+      <button data-view="hist" data-ic="cal"></button>
+      <button data-view="set" data-ic="gear"></button>
+    </div>
+    <button id="out" data-ic="out" aria-label="Account"></button>
+  </nav>
+
+  <div class="head">
+    <div><small id="hi">Welcome</small><b id="who">Guest</b></div>
+    <div class="act">
+      <button class="circ" id="add" data-ic="plus" aria-label="Save place"></button>
+      <button class="circ" id="srch" data-ic="search" aria-label="Search"></button>
+      <button class="circ" id="bell" data-ic="bell" aria-label="Alerts"></button>
+      <button class="circ" id="avatar" aria-label="Account"></button>
+    </div>
+  </div>
+
+  <main id="main" class="busy">
+    <div>
+      <div id="err" role="alert"></div>
+      <span class="pill" id="pill">Weather Forecast</span>
+      <h1 id="h1">&nbsp;</h1>
+      <p id="desc"></p>
+    </div>
+    <div class="fore" id="fore">
+      <div id="tps" style="display:contents"></div>
+      <div class="wave"><svg viewBox="0 0 600 90" preserveAspectRatio="none" aria-hidden="true"><path id="wp" vector-effect="non-scaling-stroke"/></svg><i class="pt" id="pt"></i></div>
+      <div id="dys" style="display:contents"></div>
+    </div>
+  </main>
+
+  <aside class="side" aria-label="Places">
+    <section class="gl big">
+      <div class="loc"><span data-ic="pin" data-s="18"></span><span id="place"></span></div>
+      <div class="deg" id="temp">--</div>
+      <div id="stats"></div>
+    </section>
+    <div id="cards"></div>
+  </aside>
+
+  <section class="sheet" id="sheet" hidden>
+    <button class="x" id="close" aria-label="Close">×</button>
+    <h2 id="sT"></h2>
+    <div class="pane" data-p="advice" id="advBody"></div>
+    <div class="pane" data-p="alerts" id="alBody"></div>
+    <div class="pane" data-p="hist" id="hiBody"></div>
+    <div class="pane" data-p="places"><input id="q" type="search" autocomplete="off"><div id="chips"></div></div>
+    <div class="pane" data-p="set">
+      <label id="lP"></label><div class="seg" id="profile" role="group"></div>
+      <label id="lL"></label><div class="seg" id="lang" role="group"><button data-v="en">EN</button><button data-v="rw">RW</button><button data-v="fr">FR</button></div>
+      <div class="ctl"></div>
+    </div>
+    <div class="pane" data-p="reg">
+      <p id="rSub"></p>
+      <form id="rf" novalidate>
+        <label for="rName" id="lrName"></label><input id="rName" type="text" autocomplete="name">
+        <label for="rEmail" id="lrEmail"></label><input id="rEmail" type="email" autocomplete="email">
+        <label for="rPw" id="lrPw"></label>
+        <div class="pw"><input id="rPw" type="password" autocomplete="new-password"><button type="button" id="rShow"></button></div>
+        <label id="lrProf"></label><div class="seg" id="rprofile" role="group" aria-labelledby="lrProf"></div>
+        <label id="lrLang"></label><div class="seg" id="rlang" role="group" aria-labelledby="lrLang"><button type="button" data-v="en">EN</button><button type="button" data-v="rw">RW</button><button type="button" data-v="fr">FR</button></div>
+        <div id="rmsg" role="alert"></div>
+        <button class="go" id="rGo" type="submit"></button>
+      </form>
+      <p class="rfoot"><span id="rHave"></span> <button type="button" id="rIn"></button></p>
+    </div>
+  </section>
+</div>
+
+<script>
+const $ = s => document.querySelector(s);
+const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+const S = { locs: [], id: null, lang: localStorage.lang || 'en', profile: localStorage.profile || 'all', day: null, data: null, view: 'home' };
+const wc = {};
+const RM = matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+/* ---------- Icons ---------- */
+const P = {
+  grid: '<rect x="3" y="3" width="7" height="7" rx="1.5" fill="currentColor"/><rect x="14" y="3" width="7" height="7" rx="1.5" fill="currentColor"/><rect x="3" y="14" width="7" height="7" rx="1.5" fill="currentColor"/><rect x="14" y="14" width="7" height="7" rx="1.5" fill="currentColor"/>',
+  chart: '<rect x="3" y="3" width="18" height="18" rx="4"/><path d="M8 16v-4M12 16V8M16 16v-6"/>',
+  globe: '<circle cx="11" cy="11" r="8"/><path d="M3 11h16M11 3c3 3 3 13 0 16M11 3c-3 3-3 13 0 16M17 17l4 4"/>',
+  cal: '<rect x="3" y="5" width="18" height="16" rx="3"/><path d="M3 10h18M8 3v4M16 3v4"/>',
+  gear: '<circle cx="12" cy="12" r="3"/><circle cx="12" cy="12" r="8" stroke-dasharray="3.1 3.1" stroke-width="2.6"/>',
+  out: '<path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9"/>',
+  plus: '<path d="M12 5v14M5 12h14"/>', search: '<circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/>',
+  bell: '<path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9M10.3 21a1.9 1.9 0 0 0 3.4 0"/>',
+  pin: '<path d="M20 10c0 6-8 12-8 12S4 16 4 10a8 8 0 0 1 16 0"/><circle cx="12" cy="10" r="3"/>',
+  wind: '<path d="M17.7 7.7a2.5 2.5 0 1 1 1.8 4.3H2M9.6 4.6A2 2 0 1 1 11 8H2M12.6 19.4A2 2 0 1 0 14 16H2"/>',
+  drop: '<path d="M12 22a7 7 0 0 0 7-7c0-4-7-13-7-13S5 11 5 15a7 7 0 0 0 7 7z"/>',
+  hum: '<path d="M2 9c3-3 5 3 8 0s5 3 8 0M2 15c3-3 5 3 8 0s5 3 8 0"/>',
+  sun: '<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/>',
+  cloud: '<path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z"/>',
+  rain: '<path d="M4 14.9A7 7 0 1 1 15.7 8h1.8a4.5 4.5 0 0 1 2.5 8.2M16 14v6M8 14v6M12 16v6"/>',
+  storm: '<path d="M6 16.3A7 7 0 1 1 15.7 8h1.8a4.5 4.5 0 0 1 .5 9M13 12l-3 5h4l-3 5"/>',
+  logo: '<circle cx="12" cy="12" r="10.5"/><path d="M5 9c2-2 4 2 7 0s5 2 7 0M5 12.5c2-2 4 2 7 0s5 2 7 0M5 16c2-2 4 2 7 0s5 2 7 0"/>'
+};
+const ic = (n, s = 20) => `<svg width="${s}" height="${s}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${P[n]}</svg>`;
+document.querySelectorAll('[data-ic]').forEach(e => e.innerHTML = ic(e.dataset.ic, +e.dataset.s || 20));
+
+/* ---------- Text (EN / RW / FR) ---------- */
+const L = {
+  en: { pill: 'Weather Forecast', hi: 'Welcome', dash: 'Dashboard', hist: 'History', sun: 'Sunny', partly: 'Partly cloudy', cloudy: 'Cloudy', fog: 'Foggy', rain: 'Rainy', storm: 'Thunderstorm', wind: 'Wind speed', rainc: 'Chance of rain', hum: 'Humidity', clothing: 'What to wear', home: 'Protect your home', activity: 'Activities', none: 'Nothing special today.', adviceT: 'Your advice', placesT: 'Places', alertsT: 'Alerts', setT: 'Settings', all: 'General', farmer: 'Farmer', student: 'Student', profile: 'Profile', lang: 'Language', warning: 'Warning', danger: 'Urgent', noAlerts: 'No alerts right now.', noHist: 'History appears once a few hourly readings are stored.', histT: 'Daily average, last 7 days', search: 'Search places', d: '{c} in {p}. High around {h}°C, low {l}°C. Wind {w} km/h, {r}% chance of rain.', err: 'Could not load weather. Check that the server and MongoDB are running, then try again.', days: ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'],
+    regT: 'Create account', rSub: 'Save your places and get advice that fits your day. It takes less than a minute.', rName: 'Name', rEmail: 'Email', rPw: 'Password (8+ characters)', rProf: 'I am a', rShow: 'Show', rHide: 'Hide', rGo: 'Create account', rBusy: 'Creating…', rHave: 'Already have an account?', rIn: 'Sign in', rOk: 'Account created. Loading your forecast…', eName: 'Enter your name.', eEmail: 'Enter a valid email address.', ePw: 'Use a password with at least 8 characters.', eNet: 'Could not create the account. Check that the server is running, then try again.' },
+  rw: { pill: 'Iteganyagihe ry\'ikirere', hi: 'Murakaza neza', dash: 'Ahabanza', hist: 'Amateka', sun: 'Izuba', partly: 'Ibicu bike', cloudy: 'Ibicu', fog: 'Igihu', rain: 'Imvura', storm: 'Inkuba', wind: 'Umuyaga', rainc: 'Amahirwe y\'imvura', hum: 'Ubuhehere', clothing: 'Icyo wakwambara', home: 'Rinda urugo rwawe', activity: 'Ibikorwa', none: 'Nta nama yihariye uyu munsi.', adviceT: 'Inama zawe', placesT: 'Ahantu', alertsT: 'Impuruza', setT: 'Igenamiterere', all: 'Rusange', farmer: 'Umuhinzi', student: 'Umunyeshuri', profile: 'Uwo uri we', lang: 'Ururimi', warning: 'Icyitonderwa', danger: 'Byihutirwa', noAlerts: 'Nta mpuruza ubu.', noHist: 'Amateka agaragara nyuma y\'amasaha make.', histT: 'Impuzandengo ya buri munsi, iminsi 7', search: 'Shakisha ahantu', d: '{c} i {p}. Ubushyuhe bwo hejuru {h}°C, hasi {l}°C. Umuyaga {w} km/h, amahirwe y\'imvura {r}%.', err: 'Ntibishobotse. Genzura ko seriveri na MongoDB bikora, ongera ugerageze.', days: ['Ku cyumweru', 'Kuwa mbere', 'Kuwa kabiri', 'Kuwa gatatu', 'Kuwa kane', 'Kuwa gatanu', 'Kuwa gatandatu'],
+    regT: 'Fungura konti', rSub: 'Bika ahantu hawe ubone inama zijyanye n\'umunsi wawe. Bifata munsi y\'umunota.', rName: 'Izina', rEmail: 'Imeyili', rPw: 'Ijambobanga (nibura inyuguti 8)', rProf: 'Ndi', rShow: 'Erekana', rHide: 'Hisha', rGo: 'Fungura konti', rBusy: 'Birimo gukorwa…', rHave: 'Usanzwe ufite konti?', rIn: 'Injira', rOk: 'Konti yafunguwe. Turimo gutegura iteganyagihe…', eName: 'Andika izina ryawe.', eEmail: 'Andika imeyili yemewe.', ePw: 'Koresha ijambobanga ry\'inyuguti nibura 8.', eNet: 'Ntibishobotse gufungura konti. Genzura ko seriveri ikora, ongera ugerageze.' },
+  fr: { pill: 'Prévisions météo', hi: 'Bienvenue', dash: 'Tableau de bord', hist: 'Historique', sun: 'Ensoleillé', partly: 'Peu nuageux', cloudy: 'Nuageux', fog: 'Brumeux', rain: 'Pluvieux', storm: 'Orage', wind: 'Vitesse du vent', rainc: 'Risque de pluie', hum: 'Humidité', clothing: 'Quoi porter', home: 'Protégez votre maison', activity: 'Activités', none: 'Rien de particulier aujourd\'hui.', adviceT: 'Vos conseils', placesT: 'Lieux', alertsT: 'Alertes', setT: 'Réglages', all: 'Général', farmer: 'Agriculteur', student: 'Étudiant', profile: 'Profil', lang: 'Langue', warning: 'Attention', danger: 'Urgent', noAlerts: 'Aucune alerte pour le moment.', noHist: 'L\'historique apparaît après quelques relevés.', histT: 'Moyenne par jour, 7 jours', search: 'Chercher un lieu', d: '{c} à {p}. Maximum {h}°C, minimum {l}°C. Vent {w} km/h, {r}% de risque de pluie.', err: 'Chargement impossible. Vérifiez que le serveur et MongoDB fonctionnent, puis réessayez.', days: ['Dimanche', 'Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi'],
+    regT: 'Créer un compte', rSub: 'Enregistrez vos lieux et recevez des conseils adaptés à votre journée. Moins d\'une minute.', rName: 'Nom', rEmail: 'E-mail', rPw: 'Mot de passe (8 caractères min.)', rProf: 'Je suis', rShow: 'Afficher', rHide: 'Masquer', rGo: 'Créer un compte', rBusy: 'Création…', rHave: 'Déjà un compte ?', rIn: 'Se connecter', rOk: 'Compte créé. Chargement de vos prévisions…', eName: 'Saisissez votre nom.', eEmail: 'Saisissez une adresse e-mail valide.', ePw: 'Utilisez un mot de passe d\'au moins 8 caractères.', eNet: 'Impossible de créer le compte. Vérifiez que le serveur fonctionne, puis réessayez.' }
+};
+const TT = {
+  en: { storm: ['Storm', 'with Heavy Rain'], heavy: ['Heavy Rain', 'Expected Today'], rain: ['Rain', 'Likely Today'], cloud: ['Cloudy', 'Skies Today'], clear: ['Clear', 'and Bright'] },
+  rw: { storm: ['Inkuba', 'n\'imvura nyinshi'], heavy: ['Imvura nyinshi', 'irategerejwe'], rain: ['Imvura', 'ishobora kugwa'], cloud: ['Ibicu', 'uyu munsi'], clear: ['Izuba', 'ryinshi'] },
+  fr: { storm: ['Orage', 'et pluie forte'], heavy: ['Forte pluie', 'attendue'], rain: ['Pluie', 'probable'], cloud: ['Ciel', 'nuageux'], clear: ['Ciel', 'dégagé'] }
+};
+const t = k => L[S.lang][k];
+const em = { clothing: '👕', home: '🏠', activity: '🏃' };
+
+/* ---------- Weather helpers ---------- */
+const isRain = c => (c >= 51 && c <= 67) || (c >= 80 && c <= 82);
+const ik = c => c >= 95 ? 'storm' : isRain(c) ? 'rain' : c <= 1 ? 'sun' : 'cloud';
+const cl = c => c <= 1 ? 'sun' : c === 2 ? 'partly' : (c === 45 || c === 48) ? 'fog' : isRain(c) ? 'rain' : c >= 95 ? 'storm' : 'cloudy';
+const mood = v => v.code >= 95 || (v.rain >= 85 && v.wind >= 30) ? 'storm' : (v.rain >= 60 || isRain(v.code)) ? 'rain' : v.code >= 2 ? 'cloud' : 'clear';
+const days = () => { const c = S.data.conditions; return c.daily && c.daily.length ? c.daily : [{ date: new Date().toISOString().slice(0, 10), max: c.temp, min: c.temp, code: c.code, rain: c.rain, wind: c.wind }]; };
+const today = () => { const c = S.data.conditions; return c.daily && c.daily.length ? c.today : 0; };
+
+/* ---------- Scene: rain and lightning ---------- */
+const cv = $('#rain'), cx = cv.getContext('2d');
+let drops = [], I = 0, bt;
+const fit = () => { cv.width = cv.offsetWidth; cv.height = cv.offsetHeight; };
+addEventListener('resize', fit); fit();
+(function frame() {
+  cx.clearRect(0, 0, cv.width, cv.height);
+  const n = Math.round(I * 170);
+  while (drops.length < n) drops.push({ x: Math.random() * cv.width, y: Math.random() * cv.height, l: 10 + Math.random() * 14, v: 12 + Math.random() * 10 });
+  drops.length = Math.min(drops.length, n);
+  cx.strokeStyle = 'rgba(220,235,240,.35)'; cx.beginPath();
+  for (const d of drops) { cx.moveTo(d.x, d.y); cx.lineTo(d.x - d.l * .2, d.y + d.l); d.y += d.v; d.x -= d.v * .2; if (d.y > cv.height) { d.y = -20; d.x = Math.random() * cv.width + 40; } }
+  cx.stroke(); requestAnimationFrame(frame);
+})();
+function setScene(m) {
+  I = RM ? 0 : ({ storm: 1, rain: .55 }[m] || 0);
+  clearTimeout(bt);
+  if (m === 'storm' && !RM) (function f() {
+    const b = $('#bolt'); b.style.left = (32 + Math.random() * 28) + '%';
+    b.classList.remove('on'); void b.getBoundingClientRect(); b.classList.add('on');
+    bt = setTimeout(f, 3500 + Math.random() * 5000);
+  })();
+}
+
+/* ---------- Views ---------- */
+const TITLES = { advice: 'adviceT', places: 'placesT', hist: 'hist', alerts: 'alertsT', set: 'setT', reg: 'regT' };
+function show(v) {
+  S.view = v; const sheet = v !== 'home';
+  $('#sheet').hidden = !sheet;
+  document.querySelectorAll('.pane').forEach(p => p.classList.toggle('on', p.dataset.p === v));
+  $('#sT').textContent = sheet ? t(TITLES[v]) : '';
+  document.querySelectorAll('.nav [data-view]').forEach(b => b.setAttribute('aria-current', b.dataset.view === v || (v === 'alerts' && b.dataset.view === 'home')));
+  if (v === 'places') $('#q').focus();
+  if (v === 'reg') $('#rName').focus();
+  if (v === 'hist') history();
+}
+document.querySelectorAll('.nav [data-view]').forEach(b => b.onclick = () => show(b.dataset.view));
+$('#close').onclick = () => show('home');
+$('#srch').onclick = () => show('places');
+$('#bell').onclick = () => show('alerts');
+/* Signed-in state comes from account.js (window.ME, token in localStorage.token) */
+const authed = () => !!window.ME;
+function session() {
+  const m = window.ME;
+  $('#who').textContent = m ? (m.name || String(m.email || '').split('@')[0]) : 'Guest';
+  $('#avatar').hidden = !!m;   // register icon disappears once signed in
+}
+$('#out').onclick = () => authed() ? $('#acct').click() : show('reg');   // signed in: account.js signs you out
+$('#avatar').onclick = () => show('reg');
+$('#add').onclick = () => { const st = $('#star'); if (!authed()) show('reg'); else if (st && !st.hidden) st.click(); };
+$('#rIn').onclick = () => { const a = $('#acct'); if (a) a.click(); };
+addEventListener('keydown', e => { if (e.key === 'Escape' && S.view !== 'home') show('home'); });
+$('#q').oninput = () => ui();
+$('#chips').onclick = e => { const b = e.target.closest('.chip'); if (b) pick(b.dataset.id); };
+$('#cards').onclick = e => { const b = e.target.closest('.mc'); if (b) pick(b.dataset.id); };
+const pickDay = e => { const b = e.target.closest('[data-i]'); if (b) { S.day = +b.dataset.i; render(); } };
+$('#tps').onclick = pickDay; $('#dys').onclick = pickDay;
+function pick(id) { S.id = id; S.day = null; show('home'); ui(); load(); }
+
+function seg(el, items, key) {
+  el.innerHTML = items.map(([v, label]) => `<button type="button" data-v="${v}" aria-pressed="${S[key] === v}">${label}</button>`).join('');
+  el.onclick = e => { const b = e.target.closest('button'); if (!b) return; S[key] = b.dataset.v; localStorage[key] = S[key]; ui(); load(); };
+}
+function ui() {
+  document.documentElement.lang = S.lang;
+  const profs = ['all', 'farmer', 'student'].map(v => [v, t(v)]);
+  seg($('#profile'), profs, 'profile'); seg($('#rprofile'), profs, 'profile');
+  ['#lang', '#rlang'].forEach(id => {
+    $(id).querySelectorAll('button').forEach(b => b.setAttribute('aria-pressed', b.dataset.v === S.lang));
+    $(id).onclick = e => { const b = e.target.closest('button'); if (!b) return; S.lang = b.dataset.v; localStorage.lang = S.lang; ui(); load(); };
+  });
+  const q = $('#q').value.toLowerCase();
+  $('#chips').innerHTML = S.locs.filter(l => l.name.toLowerCase().includes(q)).map(l => `<button class="chip" data-id="${l._id}" aria-pressed="${l._id === S.id}">${esc(l.name)}</button>`).join('');
+  $('#q').placeholder = t('search'); $('#hi').textContent = t('hi'); $('#pill').textContent = t('pill');
+  $('#lP').textContent = t('profile'); $('#lL').textContent = t('lang');
+  $('#rSub').textContent = t('rSub'); $('#lrName').textContent = t('rName'); $('#lrEmail').textContent = t('rEmail'); $('#lrPw').textContent = t('rPw');
+  $('#lrProf').textContent = t('rProf'); $('#lrLang').textContent = t('lang');
+  $('#rShow').textContent = t($('#rPw').type === 'password' ? 'rShow' : 'rHide');
+  if (!$('#rGo').disabled) $('#rGo').textContent = t('rGo');
+  $('#rHave').textContent = t('rHave'); $('#rIn').textContent = t('rIn');
+  const nav = { home: 'dash', advice: 'adviceT', places: 'placesT', hist: 'hist', set: 'setT' };
+  document.querySelectorAll('.nav [data-view]').forEach(b => b.setAttribute('aria-label', t(nav[b.dataset.view])));
+  if (S.view !== 'home') $('#sT').textContent = t(TITLES[S.view]);
+  if (S.data) render();
+  cards(); session();
+}
+
+/* ---------- Create account ---------- */
+function rmsg(text, ok) { const m = $('#rmsg'); m.textContent = text; m.className = ok ? 'ok' : ''; m.style.display = 'block'; }
+$('#rShow').onclick = () => { const p = $('#rPw'); p.type = p.type === 'password' ? 'text' : 'password'; ui(); };
+$('#rf').onsubmit = async e => {
+  e.preventDefault();
+  const name = $('#rName').value.trim(), email = $('#rEmail').value.trim(), password = $('#rPw').value;
+  if (!name) { rmsg(t('eName')); return $('#rName').focus(); }
+  if (!/^\S+@\S+\.\S+$/.test(email)) { rmsg(t('eEmail')); return $('#rEmail').focus(); }
+  if (password.length < 8) { rmsg(t('ePw')); return $('#rPw').focus(); }
+  const go = $('#rGo'); go.disabled = true; go.textContent = t('rBusy'); $('#rmsg').style.display = 'none';
+  try {
+    const r = await fetch('/api/auth/register', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name, email, password, profile: S.profile, lang: S.lang }) });
+    const d = await r.json().catch(() => ({}));
+    if (!r.ok) throw new Error(d.error || '');
+    localStorage.token = d.token;
+    await fetch('/api/me', { method: 'PUT', headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + d.token }, body: JSON.stringify({ lang: S.lang, profile: S.profile }) }).catch(() => { });
+    rmsg(t('rOk'), true);
+    setTimeout(() => location.reload(), 900);
+  } catch (err) {
+    rmsg(err.message || t('eNet'));
+    go.disabled = false; go.textContent = t('rGo');
+  }
+};
+
+/* ---------- Other places (right column) ---------- */
+function paintCards(o) {
+  $('#cards').innerHTML = o.map(l => {
+    const w = wc[l._id];
+    return `<button class="gl mc" data-id="${l._id}"><div><small>Rwanda</small><b>${esc(l.name)}</b><span>${w ? t(cl(w.code)) : '...'}</span></div><div class="mt">${w ? Math.round(w.temp) + '°' + ic(ik(w.code), 22) : '--'}</div></button>`;
+  }).join('');
+}
+async function cards() {
+  const saved = (window.ME && window.ME.saved) || [];
+  const o = S.locs.filter(l => l._id !== S.id).sort((a, b) => saved.includes(b._id) - saved.includes(a._id)).slice(0, 3);
+  paintCards(o);
+  const need = o.filter(l => !wc[l._id] || Date.now() - wc[l._id].at > 6e5);
+  if (!need.length) return;
+  await Promise.all(need.map(async l => { try { const w = await (await fetch('/api/weather/' + l._id)).json(); if (w.temp != null) wc[l._id] = { ...w, at: Date.now() }; } catch { } }));
+  paintCards(o);
+}
+
+/* ---------- Render ---------- */
+function curve(p) {
+  let d = `M${p[0][0]},${p[0][1]}`;
+  for (let i = 0; i < p.length - 1; i++) {
+    const a = p[i - 1] || p[i], b = p[i], c = p[i + 1], e = p[i + 2] || c;
+    d += `C${b[0] + (c[0] - a[0]) / 6},${b[1] + (c[1] - a[1]) / 6} ${c[0] - (e[0] - b[0]) / 6},${c[1] - (e[1] - b[1]) / 6} ${c[0]},${c[1]}`;
+  }
+  return d;
+}
+function render() {
+  const c = S.data.conditions, ds = days(), td = today();
+  if (S.day == null || S.day >= ds.length) S.day = td;
+  const sel = ds[S.day], now = S.day === td;
+  const v = now ? { temp: c.temp, wind: c.wind, rain: c.rain, hum: c.humidity, code: c.code } : { temp: sel.max, wind: sel.wind, rain: sel.rain, hum: null, code: sel.code };
+  v.rain = Math.round(v.rain || 0); v.wind = Math.round(v.wind || 0);
+  const m = mood(v), key = m === 'rain' && v.rain >= 80 ? 'heavy' : m;
+  document.body.dataset.mood = m; setScene(m);
+  const A = S.data.advice, cats = ['clothing', 'home', 'activity'];
+  const all = cats.flatMap(k => A[k]).sort((a, b) => ({ danger: 3, warning: 2, info: 1 }[b.severity] - { danger: 3, warning: 2, info: 1 }[a.severity]));
+
+  $('#h1').innerHTML = `${esc(TT[S.lang][key][0])}<br>${esc(TT[S.lang][key][1])}`;
+  $('#desc').textContent = t('d').replace('{c}', t(cl(v.code))).replace('{p}', S.data.location).replace('{h}', Math.round(sel.max)).replace('{l}', Math.round(sel.min)).replace('{w}', v.wind).replace('{r}', v.rain) + (now && all[0] ? ' ' + all[0].text : '');
+  $('#place').textContent = S.data.location;
+  $('#temp').innerHTML = `${Math.round(v.temp)}<span>°C</span>`;
+  $('#stats').innerHTML = [['wind', v.wind + ' km/h', 'wind'], ['drop', v.rain + '%', 'rainc'], ['hum', v.hum == null ? '--' : Math.round(v.hum) + '%', 'hum']].map(([i, x, k]) => `<span title="${t(k)}">${ic(i, 16)}${x}</span>`).join('');
+
+  $('#fore').style.setProperty('--n', ds.length);
+  $('#tps').innerHTML = ds.map((d, i) => `<button class="tp" data-i="${i}" aria-pressed="${i === S.day}">${Math.round(d.max)}°${ic(ik(d.code), 18)}</button>`).join('');
+  $('#dys').innerHTML = ds.map((d, i) => `<button class="dy" data-i="${i}" aria-pressed="${i === S.day}">${t('days')[new Date(d.date + 'T12:00:00').getDay()]}</button>`).join('');
+  const mx = Math.max(...ds.map(d => d.max)), mn = Math.min(...ds.map(d => d.max)), r = Math.max(mx - mn, 4);
+  const Y = d => 72 - (d.max - mn) / r * 48, p = ds.map((d, i) => [(i + .5) / ds.length * 600, Y(d)]);
+  p.unshift([0, p[0][1]]); p.push([600, p[p.length - 1][1]]);
+  $('#wp').setAttribute('d', curve(p));
+  $('#pt').style.left = (S.day + .5) / ds.length * 100 + '%'; $('#pt').style.top = Y(sel) + 'px';
+
+  const li = a => `<li class="${a.severity}">${a.severity !== 'info' ? `<b>${t(a.severity)}</b>` : ''}${esc(a.text)}</li>`;
+  $('#advBody').innerHTML = cats.map(k => `<h3>${em[k]} ${t(k)}</h3><ul>${A[k].length ? A[k].map(li).join('') : `<li class="none">${t('none')}</li>`}</ul>`).join('');
+  const al = cats.flatMap(k => A[k].filter(a => a.severity !== 'info').map(a => ({ ...a, k })));
+  $('#alBody').innerHTML = al.length ? `<ul>${al.map(a => `<li class="${a.severity}"><b>${t(a.severity)}</b>${em[a.k]} ${esc(a.text)}</li>`).join('')}</ul>` : `<p>${t('noAlerts')}</p>`;
+  $('#bell').classList.toggle('dot', al.length > 0);
+}
+async function history() {
+  try {
+    const a = await (await fetch('/api/analytics/' + S.id)).json(), mx = Math.max(...a.map(x => x.avg));
+    $('#hiBody').innerHTML = a.length ? `<p>${t('histT')}</p><div class="hist">${a.map(x => `<div><i style="height:${Math.max(8, x.avg / mx * 90)}px"></i>${Math.round(x.avg)}°<br>${t('days')[new Date(x._id).getDay()].slice(0, 3)}</div>`).join('')}</div>` : `<p>${t('noHist')}</p>`;
+  } catch { $('#hiBody').innerHTML = `<p>${t('noHist')}</p>`; }
+}
+
+async function load() {
+  if (!S.id) return;
+  $('#main').classList.add('busy'); $('#err').style.display = 'none';
+  try {
+    const d = await (await fetch(`/api/advice/${S.id}?lang=${S.lang}&profile=${S.profile}`)).json();
+    if (d.error) throw new Error(d.error);
+    S.data = d; render();
+  } catch (e) { $('#err').textContent = t('err'); $('#err').style.display = 'block'; }
+  $('#main').classList.remove('busy');
+}
+
+(async () => {
+  try { S.locs = await (await fetch('/api/locations')).json(); S.id = S.locs[0]?._id; ui(); await load(); }
+  catch { ui(); $('#err').textContent = t('err'); $('#err').style.display = 'block'; $('#main').classList.remove('busy'); }
+})();
+addEventListener('load', () => { session(); setTimeout(session, 400); });
+</script>
+<script src="account.js"></script>
+</body>
+</html>
